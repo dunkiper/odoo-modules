@@ -99,6 +99,28 @@ class AIProvider(models.Model):
         groups='base.group_system',
     )
 
+    opencode_server_url = fields.Char(
+        string='Server URL',
+        help=(
+            'Base URL of the self-hosted OpenCode server, e.g. '
+            'http://opencode:4096. The server acts as catalog and '
+            'credential broker: vendor API keys stay on the server.'
+        ),
+        groups='base.group_system',
+    )
+
+    opencode_server_username = fields.Char(
+        string='Server Username',
+        help='HTTP basic-auth username of the OpenCode server.',
+        groups='base.group_system',
+    )
+
+    opencode_server_password = fields.Char(
+        string='Server Password',
+        help='HTTP basic-auth password of the OpenCode server.',
+        groups='base.group_system',
+    )
+
     max_tokens = fields.Integer(
         string='Max Tokens',
         help='Maximum completion tokens per request.',
@@ -381,6 +403,97 @@ class AIProvider(models.Model):
                 'sticky': False,
             },
         }
+
+    def action_sync_opencode_server(self) -> dict:
+        """Copy the model catalog of the OpenCode server into local records.
+
+        Vendors without a resolved API key on the server are skipped, since
+        their models could not be called. A second sync updates the known
+        records in place and never resurrects archived ones.
+        """
+        self.ensure_one()
+        if self.name != 'opencode_server':
+            raise UserError(
+                _(
+                    'Model synchronization is only available for OpenCode '
+                    'Server providers.'
+                )
+            )
+        client = self._get_client()
+        catalog = client.fetch_catalog()
+        model_env = self.env['muk_ai.model']
+        created = updated = 0
+        skipped = []
+        for vendor in catalog['vendors'].values():
+            if not vendor['key']:
+                skipped.append(vendor['name'])
+                continue
+            for model_id, entry in vendor['models'].items():
+                values = client.model_values(entry)
+                if values is None:
+                    continue
+                technical_name = f'{vendor["id"]}/{model_id}'
+                existing = model_env.with_context(active_test=False).search(
+                    [
+                        ('provider_id', '=', self.id),
+                        ('technical_name', '=', technical_name),
+                        ('modality', '=', 'chat'),
+                    ],
+                    limit=1,
+                )
+                if existing:
+                    existing.write(values)
+                    updated += 1
+                else:
+                    model_env.create(
+                        {
+                            **values,
+                            'provider_id': self.id,
+                            'technical_name': technical_name,
+                        }
+                    )
+                    created += 1
+        self._opencode_server_default(catalog)
+        client.clear_catalog()
+        message = _(
+            'Synchronized %(created)s new and %(updated)s known models '
+            'from the OpenCode server.',
+            created=created,
+            updated=updated,
+        )
+        if skipped:
+            message += _(
+                ' Skipped vendors without an API key: %(vendors)s.',
+                vendors=', '.join(skipped),
+            )
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'type': 'success',
+                'title': _('OpenCode Server'),
+                'message': message,
+                'sticky': False,
+            },
+        }
+
+    def _opencode_server_default(self, catalog: dict) -> None:
+        """Adopt the server's preferred default as the default chat model."""
+        if self.default_chat_model_id:
+            return
+        model_env = self.env['muk_ai.model'].with_context(active_test=False)
+        for vendor_id, model_id in (catalog.get('defaults') or {}).items():
+            record = model_env.search(
+                [
+                    ('provider_id', '=', self.id),
+                    ('technical_name', '=', f'{vendor_id}/{model_id}'),
+                    ('modality', '=', 'chat'),
+                ],
+                limit=1,
+            )
+            if record:
+                self.default_chat_model_id = record
+                return
 
     # ----------------------------------------------------------
     # Compute

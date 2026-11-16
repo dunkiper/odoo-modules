@@ -1,8 +1,9 @@
 # MuK AI Assistant
 
 A complete agentic AI assistant inside Odoo. MuK AI ships a native
-OWL chat client, a session-based agent runtime, and three first-class
-LLM providers (**OpenAI**, **Anthropic**, **Google Gemini**) with
+OWL chat client, a session-based agent runtime, and four first-class
+LLM providers (**OpenAI**, **Anthropic**, **Google Gemini**, and a
+self-hosted **OpenCode Server** broker) with
 live token and reasoning streaming. The assistant talks to your data
 through the same `muk_mcp` tool registry your external AI clients
 already use — one source of truth, one permission model, one audit
@@ -75,6 +76,19 @@ One record per provider implementation (`openai`, `anthropic`,
   stream is aborted and the session is marked errored (default `45`).
 - **Rate Limit (per minute)** — max sessions a single user may create
   per minute. `0` disables the cap.
+
+For the **OpenCode Server** provider the API key gives way to its own
+fields: **Server URL** (e.g. `http://opencode:4096`), **Server
+Username** and **Server Password** (HTTP basic auth). The server acts
+as catalog and credential broker: the **Sync Models** button copies
+the resolved catalog of `GET /config/providers` (NVIDIA, OpenRouter, …
+with context windows, pricing, and capability flags) into the model
+records, and inference calls each vendor's own OpenAI-compatible
+`/chat/completions` endpoint directly with the key the server
+reports — vendor API keys never leave the server, and no secret is
+stored in Odoo. A vendor without a key on the server is skipped, and
+the server's preferred default becomes the default chat model on the
+first sync.
 
 A **Test Connection** button on the provider form sends a tiny probe
 (`Reply with a single word.`) and reports success or failure without
@@ -459,8 +473,9 @@ is one source of truth and no config drift.
 | `openai`    | SSE       | OpenAI Responses API; skips `temperature` for reasoning models                |
 | `anthropic` | SSE       | Messages API; in-dispatcher adapter for `tool_use` / `tool_result`            |
 | `google`    | SSE       | Gemini `streamGenerateContent`; grounding; image models via `generateContent` |
+| `opencode_server` | SSE | Self-hosted OpenCode server as catalog/key broker; vendor-native `/chat/completions` |
 
-All three providers emit the same on-delta events (`text`,
+All providers emit the same on-delta events (`text`,
 `tool_start`, `tool_args`), so the chat UI feels identical regardless
 of which provider is active.
 

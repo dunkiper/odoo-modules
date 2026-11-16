@@ -46,6 +46,12 @@
                         string="Test Connection"
                         class="btn-primary"
                     />
+					<button
+                        name="action_sync_opencode_server"
+                        type="object"
+                        string="Sync Models"
+                        invisible="name != 'opencode_server'"
+                    />
 				</header>
 				<sheet>
 					<widget
@@ -65,7 +71,25 @@
 					</div>
 					<group class="o_label_nowrap">
 						<group string="Connection">
-							<field name="api_key" password="True"/>
+							<field
+                                name="opencode_server_url"
+                                invisible="name != 'opencode_server'"
+                                placeholder="http://opencode:4096"
+                            />
+							<field
+                                name="opencode_server_username"
+                                invisible="name != 'opencode_server'"
+                            />
+							<field
+                                name="opencode_server_password"
+                                password="True"
+                                invisible="name != 'opencode_server'"
+                            />
+							<field
+                                name="api_key"
+                                password="True"
+                                invisible="name == 'opencode_server'"
+                            />
 							<field name="model_modalities" invisible="1"/>
 							<field
                                 name="default_chat_model_id"
@@ -82,12 +106,12 @@
                                 name="api_region"
                                 widget="filtered_selection"
                                 options="{'options_field': 'api_region_options'}"
-                                invisible="not api_region_options"
+                                invisible="not api_region_options or name == 'opencode_server'"
                             />
 							<field
                                 name="api_url"
-                                invisible="api_region != 'custom'"
-                                required="api_region == 'custom'"
+                                invisible="api_region != 'custom' or name == 'opencode_server'"
+                                required="api_region == 'custom' and name != 'opencode_server'"
                                 placeholder="https://my-resource.openai.azure.com/openai/v1"
                             />
 							<field
