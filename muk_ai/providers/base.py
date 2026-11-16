@@ -241,16 +241,20 @@ class ProviderBase:
 
     _http_session = staticmethod(http_session)
 
-    def _post_json(self, path: str, body: dict, timeout: int | None = None) -> dict:
+    def _post_json(
+        self, path: str, body: dict, timeout: int | None = None, url: str | None = None
+    ) -> dict:
         """POST a JSON body and return the decoded response.
 
         :param timeout: budget in seconds, defaulting to the chat request
             timeout; a route that outlives it (image rendering) passes its own.
+        :param url: explicit endpoint overriding ``api_url`` + ``path``, for
+            adapters that target per-request endpoints.
         :raise UserError: on HTTP or transport errors.
         """
         try:
             response = self._http_session().post(
-                f'{self.api_url}{path}',
+                url or f'{self.api_url}{path}',
                 headers=self.headers(),
                 json=body,
                 timeout=timeout or self.request_timeout,
@@ -262,15 +266,19 @@ class ProviderBase:
             self._raise(error)
         return response.json()
 
-    def _post_stream(self, path: str, body: dict) -> Iterator[dict]:
+    def _post_stream(
+        self, path: str, body: dict, url: str | None = None
+    ) -> Iterator[dict]:
         """POST a JSON body and yield decoded SSE ``data:`` payloads.
 
+        :param url: explicit endpoint overriding ``api_url`` + ``path``, for
+            adapters that target per-request endpoints.
         :raise UserError: on HTTP, transport, or stream-idle errors.
         """
         read_timeout = self.idle_timeout
         try:
             response = self._http_session().post(
-                f'{self.api_url}{path}',
+                url or f'{self.api_url}{path}',
                 headers=self.headers(),
                 json=body,
                 timeout=read_timeout,

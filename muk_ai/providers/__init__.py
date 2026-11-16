@@ -5,6 +5,7 @@ from .base import ProviderBase
 from .openai import OpenAIProvider
 from .anthropic import AnthropicProvider
 from .google import GoogleProvider
+from .opencode_server import OpenCodeServerProvider
 
 
 REGISTRY = {
@@ -13,5 +14,6 @@ REGISTRY = {
         OpenAIProvider,
         AnthropicProvider,
         GoogleProvider,
+        OpenCodeServerProvider,
     )
 }

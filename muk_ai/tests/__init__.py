@@ -59,3 +59,4 @@ from . import test_web_search_route
 from . import test_session_seam
 from . import test_agent_form
 from . import test_agent_capabilities
+from . import test_opencode_server
