@@ -1,12 +1,12 @@
 # MuK AI Assistant
 
 A complete agentic AI assistant inside Odoo. MuK AI ships a native
-OWL chat client, a session-based agent runtime, and three first-class
-LLM providers (**OpenAI**, **Anthropic**, **Google Gemini**) with
-live token and reasoning streaming. The assistant talks to your data
-through the same `muk_mcp` tool registry your external AI clients
-already use — one source of truth, one permission model, one audit
-trail.
+OWL chat client, a session-based agent runtime, and four first-class
+LLM providers (**OpenAI**, **Anthropic**, **Google Gemini**,
+**OpenCode**) with live token and reasoning streaming. The assistant
+talks to your data through the same `muk_mcp` tool registry your
+external AI clients already use — one source of truth, one permission
+model, one audit trail.
 
 Includes human-in-the-loop `ask_user` support, a session-scoped
 approval gate for risky writes, per-agent tool filters, read-only
@@ -64,7 +64,7 @@ Everything else is configured per-record, not globally:
 **Providers — `MuK AI > Configuration > Providers`**
 
 One record per provider implementation (`openai`, `anthropic`,
-`google`). Fields:
+`google`, `opencode`). Fields:
 
 - **API Key** — authentication token for this provider.
 - **Default Model** — `muk_ai.model` used when an agent does not
@@ -86,8 +86,12 @@ The model catalog ships prefilled with current API-available SKUs —
 GPT-6 Astra, the GPT-5.x family (5.1, 5.2, 5.4 + Pro, 5.5 + Pro and the
 5.6 Sol / Terra / Luna tiers), GPT-4.1 and GPT-4o; Claude (Opus 4.5
 through 5, Sonnet 4.5/4.6 and Sonnet 5, Haiku 4.5, Fable 5 and 5.1); and
-Gemini (2.5 Pro/Flash/Flash-Lite plus the 3.x Flash and Pro tiers).
-Retired SKUs are dropped as the vendors shut them down, so the list stays
+Gemini (2.5 Pro/Flash/Flash-Lite plus the 3.x Flash and Pro tiers). The
+**OpenCode** provider catalogues the SKUs of its multi-vendor gateway
+under one account instead — GPT-5.x/6.x, Claude (Opus, Sonnet, Haiku,
+Fable), Gemini, GLM, Kimi, DeepSeek, Qwen, MiniMax and Grok, including
+the free-tier models — billed at the gateway's rates. Retired SKUs are
+dropped as the vendors shut them down, so the list stays
 callable rather than historical. Each record carries:
 
 - **Technical Name** — API id (`gpt-5.2`, `claude-sonnet-5`,
@@ -457,10 +461,20 @@ is one source of truth and no config drift.
 | `openai`    | SSE       | OpenAI Responses API; skips `temperature` for reasoning models                |
 | `anthropic` | SSE       | Messages API; in-dispatcher adapter for `tool_use` / `tool_result`            |
 | `google`    | SSE       | Gemini `streamGenerateContent`; grounding; image models via `generateContent` |
+| `opencode`  | SSE       | OpenCode Console gateway on the OpenAI Responses wire — one API key for the whole multi-vendor catalog (GPT, Claude, Gemini, GLM, Kimi, DeepSeek, …), which the gateway translates server-side; no built-in tools or Files API |
 
-All three providers emit the same on-delta events (`text`,
+All four providers emit the same on-delta events (`text`,
 `tool_start`, `tool_args`), so the chat UI feels identical regardless
 of which provider is active.
+
+**OpenCode.** The OpenCode provider points at
+`https://opencode.ai/inference/openai/v1` and authenticates with the
+API key from the [OpenCode Console](https://opencode.ai/console)
+(paste it into the provider's **API Key** field). Because the gateway
+translates every text model through each wire, a single provider
+record serves the whole catalog — Claude and Gemini included — while
+built-in web search, code interpreter and image generation stay
+exclusive to the native providers.
 
 **Performance.** Long conversations exploit provider **prompt
 caching** — Anthropic `cache_control` breakpoints on the stable prompt

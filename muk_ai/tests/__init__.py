@@ -5,6 +5,7 @@ from . import test_bus
 from . import test_openai
 from . import test_anthropic
 from . import test_google
+from . import test_opencode
 from . import test_carry_state
 from . import test_http_pool
 from . import test_retention

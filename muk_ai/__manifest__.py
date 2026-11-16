@@ -1,16 +1,16 @@
 {
     'name': 'MuK AI Assistant',
-    'summary': 'Native agentic AI (ChatGPT, Claude, Gemini) agent and chat',
+    'summary': 'Native agentic AI (OpenAI, Claude, Gemini, OpenCode) agent and chat',
     'description': """
         A complete agentic AI assistant inside Odoo. Ships a native OWL
         chat client (with floating window and systray), a session-based
-        agent runtime, and three first-class LLM providers (OpenAI
-        Responses, Anthropic Messages, Google Gemini) with live token
-        and reasoning streaming. Talks to your data through the same
-        muk_mcp tool registry your external AI clients use — one source
-        of truth, one permission model, one audit trail.
+        agent runtime, and four first-class LLM providers (OpenAI
+        Responses, Anthropic Messages, Google Gemini, OpenCode gateway)
+        with live token and reasoning streaming. Talks to your data
+        through the same muk_mcp tool registry your external AI clients
+        use — one source of truth, one permission model, one audit trail.
     """,
-    'version': '18.0.1.29.10',
+    'version': '18.0.1.29.11',
     'category': 'Productivity',
     'license': 'LGPL-3',
     'author': 'MuK IT',

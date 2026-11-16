@@ -29,4 +29,13 @@
 		<field name="rate_limit">10</field>
 	</record>
 
+	<record id="provider_opencode" model="muk_ai.provider">
+		<field name="name">opencode</field>
+		<field name="sequence">40</field>
+		<field name="request_timeout">60</field>
+		<field name="idle_timeout">45</field>
+		<field name="image_timeout">180</field>
+		<field name="rate_limit">10</field>
+	</record>
+
 </odoo>
